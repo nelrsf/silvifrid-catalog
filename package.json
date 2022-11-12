@@ -1,0 +1,27 @@
+{
+  "dependencies": {
+    "body-parser": "^1.20.0",
+    "cors": "^2.8.5",
+    "dotenv": "^16.0.0",
+    "express": "^4.17.3",
+    "firebase": "^9.6.11",
+    "firebase-admin": "^10.0.2",
+    "fs": "^0.0.1-security",
+    "https": "^1.0.0",
+    "instagram-node": "^0.5.8",
+    "mongoose": "^6.2.10",
+    "nodejs": "^0.0.0",
+    "path": "^0.12.7",
+    "simple-oauth2": "^4.3.0"
+  },
+  "name": "silvifrid-catalog",
+  "version": "1.0.0",
+  "main": "app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node app.js"
+  },
+  "author": "",
+  "license": "ISC",
+  "description": ""
+}
