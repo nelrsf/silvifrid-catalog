@@ -14,8 +14,11 @@ mongoose.connect(process.env.DB_CONNECTION,
     )
 
 
-const apiProducts = require("./controller/getProducts");
-app.use("/getproducts", apiProducts)
+const apiGetProducts = require("./controller/getProducts");
+app.use("/getproducts", apiGetProducts)
+
+const apiCreateProducts = require("./controller/createProducts");
+app.use("/createproduct", apiCreateProducts)
 
 
 app.listen(process.env.PORT);
