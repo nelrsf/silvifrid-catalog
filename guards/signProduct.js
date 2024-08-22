@@ -1,5 +1,5 @@
 const crypto = require("crypto.js");
-const product = require("../model/product");
+require("dotenv/config");
 
 const signProduct = (product) => {
     const id = product?._id?.toString();
@@ -10,7 +10,7 @@ const signProduct = (product) => {
         throw new Error("'Product object requires _id, name, and price properties'");
     }
 
-    const plainSignature = id + process.env.SECRET + price + name;
+    const plainSignature = id + process.env.PRODUCT_SIGNATURE + price + name;
     const productSignature = crypto.sha256(plainSignature);
     product._doc.signature = productSignature;
 }
