@@ -1,9 +1,9 @@
 const express = require("express");
 const router = express.Router();
 const Product = require("../model/product");
-const authGuard = require("./../guards/authGuard");
+const permissionGuard = require("../guards/permissionGuard");
 
-router.post("/", authGuard, async (req, res) => {
+router.post("/", permissionGuard(['products-create']), async (req, res) => {
     try {
         const newProduct = await Product.create(req.body);
         res.status(201).send("Ok");

@@ -2,25 +2,30 @@ const request = require('supertest');
 const express = require('express');
 const router = require('../controller/createProducts');
 const Product = require('../model/product');
-const authGuard = require('./../guards/authGuard');
 
-// Mock de authGuard
-jest.mock('./../guards/authGuard', () => jest.fn((req, res, next) => next()));
+// Mock de permissionGuard with proper Jest hoisting
+jest.mock('../guards/permissionGuard', () => jest.fn(() => jest.fn((req, res, next) => next())));
+const mockPermissionGuard = require('../guards/permissionGuard');
 
 // Mock de Product.create
 jest.mock('../model/product');
 
-const app = express();
-
-app.use(express.json());
-app.use('/', router);
+const createApp = () => {
+    const app = express();
+    app.use(express.json());
+    app.use('/', router);
+    return app;
+};
 
 describe('Product Controller', () => {
-    afterEach(() => {
+    beforeEach(() => {
         jest.clearAllMocks();
+        // Default mock implementation
+        mockPermissionGuard.mockImplementation(() => jest.fn((req, res, next) => next()));
     });
 
     it('should create a new product successfully', async () => {
+        const app = createApp();
         const mockProduct = {
             nombre: 'Test Product',
             descripcion: 'This is a test product',
@@ -38,10 +43,11 @@ describe('Product Controller', () => {
         expect(response.statusCode).toBe(201);
         expect(response.text).toBe('Ok');
         expect(Product.create).toHaveBeenCalledWith(mockProduct);
-        expect(authGuard).toHaveBeenCalled();
+        expect(mockPermissionGuard).toHaveBeenCalledWith(['products-create']);
     });
 
     it('should handle errors when creating a product', async () => {
+        const app = createApp();
         const mockError = new Error('Database error');
         Product.create.mockRejectedValue(mockError);
 
@@ -53,16 +59,18 @@ describe('Product Controller', () => {
         expect(response.body).toEqual({ message: mockError.toString() });
     });
 
-    it('should reject requests without proper authentication', async () => {
-        authGuard.mockImplementation((req, res, next) => {
-            res.status(401).json({ message: 'Unauthorized' });
-        });
+    it('should reject requests without proper permissions', async () => {
+        mockPermissionGuard.mockImplementation(() => jest.fn((req, res, next) => {
+            res.status(403).json({ message: 'Insufficient permissions' });
+        }));
+
+        const app = createApp();
 
         const response = await request(app)
             .post('/')
             .send({});
 
-        expect(response.statusCode).toBe(401);
-        expect(response.body).toEqual({ message: 'Unauthorized' });
+        expect(response.statusCode).toBe(403);
+        expect(response.body).toEqual({ message: 'Insufficient permissions' });
     });
 });
