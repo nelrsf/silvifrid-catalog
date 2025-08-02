@@ -27,7 +27,9 @@ router.delete("/:id", validateObjectId, permissionGuard(['products-delete']), as
             message: 'Product deleted successfully' 
         });
     } catch (error) {
-        console.error('Delete product error:', error);
+        if (process.env.NODE_ENV !== 'test') {
+            console.error('Delete product error:', error);
+        }
         res.status(500).json({ message: 'Internal server error' });
     }
 });

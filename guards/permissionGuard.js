@@ -19,15 +19,11 @@ const permissionGuard = (requiredPermissions) => {
 
         jwt.verify(token, process.env.SECRET, (error, payload) => {
             if (error) {
-                console.log(error);
                 return res.status(401).json({ message: 'Invalid token' });
             }
 
             authenticate(payload).then(
                 (_response) => {
-                    console.log("user successfully authenticated");
-                    console.log(payload);
-                    
                     // Check permissions
                     const userPermissions = payload.permissions || [];
                     const hasGlobalPermission = userPermissions.includes('products-all');
@@ -44,7 +40,6 @@ const permissionGuard = (requiredPermissions) => {
                 }
             ).catch(
                 (error) => {
-                    console.log(error);
                     res.status(401).json({ message: 'Authentication failed' });
                 }
             );

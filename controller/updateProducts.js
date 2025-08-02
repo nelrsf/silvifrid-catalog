@@ -31,7 +31,9 @@ router.put("/:id", validateObjectId, permissionGuard(['products-edit']), async (
 
         res.status(200).json(updatedProduct);
     } catch (error) {
-        console.error('Update product error:', error);
+        if (process.env.NODE_ENV !== 'test') {
+            console.error('Update product error:', error);
+        }
         if (error.name === 'ValidationError') {
             return res.status(400).json({ message: error.message });
         }
