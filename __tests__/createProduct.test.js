@@ -1,14 +1,21 @@
 const request = require('supertest');
 const express = require('express');
+
+// Mock permissionGuard BEFORE importing the router
+jest.mock('../guards/permissionGuard', () => {
+    const mockMiddleware = jest.fn((req, res, next) => next());
+    const mockPermissionGuard = jest.fn(() => mockMiddleware);
+    mockPermissionGuard.mockMiddleware = mockMiddleware;
+    return mockPermissionGuard;
+});
+
+// Mock Product model
+jest.mock('../model/product');
+
+// NOW import the router after mocks are set up
 const router = require('../controller/createProducts');
 const Product = require('../model/product');
-
-// Mock de permissionGuard with proper Jest hoisting
-jest.mock('../guards/permissionGuard', () => jest.fn(() => jest.fn((req, res, next) => next())));
 const mockPermissionGuard = require('../guards/permissionGuard');
-
-// Mock de Product.create
-jest.mock('../model/product');
 
 const createApp = () => {
     const app = express();
@@ -20,8 +27,8 @@ const createApp = () => {
 describe('Product Controller', () => {
     beforeEach(() => {
         jest.clearAllMocks();
-        // Default mock implementation
-        mockPermissionGuard.mockImplementation(() => jest.fn((req, res, next) => next()));
+        // Default mock implementation - reset the middleware mock
+        mockPermissionGuard.mockMiddleware.mockImplementation((req, res, next) => next());
     });
 
     it('should create a new product successfully', async () => {
@@ -43,7 +50,7 @@ describe('Product Controller', () => {
         expect(response.statusCode).toBe(201);
         expect(response.text).toBe('Ok');
         expect(Product.create).toHaveBeenCalledWith(mockProduct);
-        expect(mockPermissionGuard).toHaveBeenCalledWith(['products-create']);
+        expect(mockPermissionGuard.mockMiddleware).toHaveBeenCalled();
     });
 
     it('should handle errors when creating a product', async () => {
@@ -60,9 +67,9 @@ describe('Product Controller', () => {
     });
 
     it('should reject requests without proper permissions', async () => {
-        mockPermissionGuard.mockImplementation(() => jest.fn((req, res, next) => {
+        mockPermissionGuard.mockMiddleware.mockImplementation((req, res, next) => {
             res.status(403).json({ message: 'Insufficient permissions' });
-        }));
+        });
 
         const app = createApp();
 

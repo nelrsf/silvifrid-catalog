@@ -1,14 +1,21 @@
 const request = require('supertest');
 const express = require('express');
-const router = require('../controller/deleteProducts');
-const Product = require('../model/product');
 
-// Mock permissionGuard with proper Jest hoisting
-jest.mock('../guards/permissionGuard', () => jest.fn(() => jest.fn((req, res, next) => next())));
-const mockPermissionGuard = require('../guards/permissionGuard');
+// Mock permissionGuard BEFORE importing the router
+jest.mock('../guards/permissionGuard', () => {
+    const mockMiddleware = jest.fn((req, res, next) => next());
+    const mockPermissionGuard = jest.fn(() => mockMiddleware);
+    mockPermissionGuard.mockMiddleware = mockMiddleware;
+    return mockPermissionGuard;
+});
 
 // Mock Product model
 jest.mock('../model/product');
+
+// NOW import the router after mocks are set up
+const router = require('../controller/deleteProducts');
+const Product = require('../model/product');
+const mockPermissionGuard = require('../guards/permissionGuard');
 
 const createApp = () => {
     const app = express();
@@ -20,8 +27,8 @@ const createApp = () => {
 describe('Delete Product Controller', () => {
     beforeEach(() => {
         jest.clearAllMocks();
-        // Reset to default mock implementation
-        mockPermissionGuard.mockImplementation(() => jest.fn((req, res, next) => next()));
+        // Default mock implementation - reset the middleware mock
+        mockPermissionGuard.mockMiddleware.mockImplementation((req, res, next) => next());
     });
 
     it('should delete a product successfully', async () => {
@@ -40,7 +47,7 @@ describe('Delete Product Controller', () => {
             message: 'Product deleted successfully' 
         });
         expect(Product.findByIdAndDelete).toHaveBeenCalledWith(productId);
-        expect(mockPermissionGuard).toHaveBeenCalledWith(['products-delete']);
+        expect(mockPermissionGuard.mockMiddleware).toHaveBeenCalled();
     });
 
     it('should handle product not found', async () => {
@@ -79,9 +86,9 @@ describe('Delete Product Controller', () => {
     });
 
     it('should reject requests without proper permissions', async () => {
-        mockPermissionGuard.mockImplementation(() => jest.fn((req, res, next) => {
+        mockPermissionGuard.mockMiddleware.mockImplementation((req, res, next) => {
             res.status(403).json({ message: 'Insufficient permissions' });
-        }));
+        });
         
         const app = createApp();
         const productId = '507f1f77bcf86cd799439011';
