@@ -1,8 +1,5 @@
 {
-    "jest": {
-      "collectCoverage": true,
-      "coverageReporters": ["text", "lcov"],
-      "coverageDirectory": "coverage"
-
-    }
-  }
+  "collectCoverage": true,
+  "coverageReporters": ["text", "lcov"],
+  "coverageDirectory": "coverage"
+}

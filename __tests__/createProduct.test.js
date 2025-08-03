@@ -1,26 +1,38 @@
 const request = require('supertest');
 const express = require('express');
-const router = require('../controller/createProducts');
-const Product = require('../model/product');
-const authGuard = require('./../guards/authGuard');
 
-// Mock de authGuard
-jest.mock('./../guards/authGuard', () => jest.fn((req, res, next) => next()));
+// Mock permissionGuard BEFORE importing the router
+jest.mock('../guards/permissionGuard', () => {
+    const mockMiddleware = jest.fn((req, res, next) => next());
+    const mockPermissionGuard = jest.fn(() => mockMiddleware);
+    mockPermissionGuard.mockMiddleware = mockMiddleware;
+    return mockPermissionGuard;
+});
 
-// Mock de Product.create
+// Mock Product model
 jest.mock('../model/product');
 
-const app = express();
+// NOW import the router after mocks are set up
+const router = require('../controller/createProducts');
+const Product = require('../model/product');
+const mockPermissionGuard = require('../guards/permissionGuard');
 
-app.use(express.json());
-app.use('/', router);
+const createApp = () => {
+    const app = express();
+    app.use(express.json());
+    app.use('/', router);
+    return app;
+};
 
 describe('Product Controller', () => {
-    afterEach(() => {
+    beforeEach(() => {
         jest.clearAllMocks();
+        // Default mock implementation - reset the middleware mock
+        mockPermissionGuard.mockMiddleware.mockImplementation((req, res, next) => next());
     });
 
     it('should create a new product successfully', async () => {
+        const app = createApp();
         const mockProduct = {
             nombre: 'Test Product',
             descripcion: 'This is a test product',
@@ -38,10 +50,11 @@ describe('Product Controller', () => {
         expect(response.statusCode).toBe(201);
         expect(response.text).toBe('Ok');
         expect(Product.create).toHaveBeenCalledWith(mockProduct);
-        expect(authGuard).toHaveBeenCalled();
+        expect(mockPermissionGuard.mockMiddleware).toHaveBeenCalled();
     });
 
     it('should handle errors when creating a product', async () => {
+        const app = createApp();
         const mockError = new Error('Database error');
         Product.create.mockRejectedValue(mockError);
 
@@ -53,16 +66,18 @@ describe('Product Controller', () => {
         expect(response.body).toEqual({ message: mockError.toString() });
     });
 
-    it('should reject requests without proper authentication', async () => {
-        authGuard.mockImplementation((req, res, next) => {
-            res.status(401).json({ message: 'Unauthorized' });
+    it('should reject requests without proper permissions', async () => {
+        mockPermissionGuard.mockMiddleware.mockImplementation((req, res, next) => {
+            res.status(403).json({ message: 'Insufficient permissions' });
         });
+
+        const app = createApp();
 
         const response = await request(app)
             .post('/')
             .send({});
 
-        expect(response.statusCode).toBe(401);
-        expect(response.body).toEqual({ message: 'Unauthorized' });
+        expect(response.statusCode).toBe(403);
+        expect(response.body).toEqual({ message: 'Insufficient permissions' });
     });
 });

@@ -20,5 +20,11 @@ app.use("/getproducts", apiGetProducts)
 const apiCreateProducts = require("./controller/createProducts");
 app.use("/createproduct", apiCreateProducts)
 
+const apiUpdateProducts = require("./controller/updateProducts");
+app.use("/updateproduct", apiUpdateProducts)
+
+const apiDeleteProducts = require("./controller/deleteProducts");
+app.use("/deleteproduct", apiDeleteProducts)
+
 
 app.listen(process.env.PORT);
