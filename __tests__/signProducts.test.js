@@ -25,7 +25,7 @@ describe('Signature Functions', () => {
 
             const expectedSignature = crypto
                 .createHash('sha256')
-                .update(`${mockProduct._id}${process.env.SECRET}${mockProduct._doc.price}${mockProduct._doc.name}`)
+                .update(`${mockProduct._id}${process.env.PRODUCT_SIGNATURE}${mockProduct._doc.price}${mockProduct._doc.name}`)
                 .digest('hex');
 
             signProduct(mockProduct);
@@ -53,7 +53,7 @@ describe('Signature Functions', () => {
             product.mockReturnValueOnce(mockProducts[1]);
 
             const expectedSignatures = mockProducts.map((product) => {
-                const plainSignature = `${product._id}${process.env.SECRET}${product._doc.price}${product._doc.name}`;
+                const plainSignature = `${product._id}${process.env.PRODUCT_SIGNATURE}${product._doc.price}${product._doc.name}`;
                 return crypto.createHash('sha256').update(plainSignature).digest('hex');
             });
 
@@ -81,7 +81,7 @@ describe('Signature Functions', () => {
 
             const expectedSignature = crypto
                 .createHash('sha256')
-                .update(`${mockProduct._id}${process.env.SECRET}${mockProduct._doc.price}${mockProduct._doc.name}`)
+                .update(`${mockProduct._id}${process.env.PRODUCT_SIGNATURE}${mockProduct._doc.price}${mockProduct._doc.name}`)
                 .digest('hex');
 
             signProducts(mockProduct);
